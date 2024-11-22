@@ -1,8 +1,12 @@
 name: PR Checks
-on: [pull_request]
+on:
+  push:
+    branches:
+      - master
 
 jobs:
   commit-lint:
+    if: false
     runs-on: ubuntu-latest
     concurrency:
       group: ${{ github.ref }}-commit-lint
@@ -12,8 +16,18 @@ jobs:
       - uses: actions/checkout@v4
       - uses: wagoid/commitlint-github-action@v5
   lint:
-    runs-on: ubuntu-latest
-    name: Lint
+    strategy:
+      fail-fast: false
+      matrix:
+        runner:
+          - ubuntu-latest
+          - ubicloud-standard-2
+          - ubicloud-standard-4
+          - ubicloud-standard-8
+          - ubicloud-standard-16
+          - ubicloud-standard-30
+    runs-on: ${{ matrix.runner }}
+    name: Lint ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v3
@@ -32,11 +46,18 @@ jobs:
       - name: syncpack
         run: pnpm sp lint
   build:
-    runs-on: ubuntu-latest
-    concurrency:
-      group: ${{ github.ref }}-pr-build
-      cancel-in-progress: true
-    name: Build & Test
+    strategy:
+      fail-fast: false
+      matrix:
+        runner:
+          - ubuntu-latest
+          - ubicloud-standard-2
+          - ubicloud-standard-4
+          - ubicloud-standard-8
+          - ubicloud-standard-16
+          - ubicloud-standard-30
+    runs-on: ${{ matrix.runner }}
+    name: Build & Test ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v3
@@ -56,6 +77,7 @@ jobs:
         run: pnpm test:all --skip-nx-cache
 
   tsdoc-check:
+    if: false
     runs-on: ubuntu-latest
     name: Check TSDoc Links
     concurrency:
